@@ -1,0 +1,29 @@
+# Python bytecode and cache files
+*.pyc
+__pycache__
+
+# Virtual environment
+venv
+.venv
+env
+
+# Temporary files
+tmp
+temp
+
+# Log files
+*.log
+
+# Docker related
+.dockerignore
+Dockerfile
+
+# Git related
+.git
+
+# Other common exclusions
+*.egg-info
+*.dist-info
+node_modules
+
+.ipynb_checkpoints/

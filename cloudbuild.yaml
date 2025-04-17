@@ -1,0 +1,73 @@
+# Define steps to execute in the build pipeline
+steps:
+  # 1. Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'build',
+        '-t',
+        '${_REGION}-docker.pkg.dev/${_GCP_PROJECT_ID}/${_ARTIFACT_REPO}/${_SERVICE_NAME}:${COMMIT_SHA}', # Tag with region, project, repo, service, and commit SHA
+        '.', # Build context is the current directory
+      ]
+    id: Build Image
+
+  # 2. Push the Docker image to Google Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'push',
+        '${_REGION}-docker.pkg.dev/${_GCP_PROJECT_ID}/${_ARTIFACT_REPO}/${_SERVICE_NAME}:${COMMIT_SHA}',
+      ]
+    id: Push Image
+    waitFor: ['Build Image'] # Ensure build is complete before pushing
+
+  # 3. Deploy the image to Google Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      [
+        'run',
+        'deploy',
+        '${_SERVICE_NAME}', # Name of the Cloud Run service
+        '--image', # Specify the image to deploy
+        '${_REGION}-docker.pkg.dev/${_GCP_PROJECT_ID}/${_ARTIFACT_REPO}/${_SERVICE_NAME}:${COMMIT_SHA}',
+        '--region', # Region for the Cloud Run service
+        '${_REGION}',
+        '--platform', # Target platform
+        'managed', # Use Cloud Run managed platform
+        '--quiet', # Suppress interactive prompts
+        '--allow-unauthenticated', # Allow public access (adjust if auth is needed)
+        # Set environment variables for the Cloud Run service
+        # These should match the ones used in your main.py
+        '--set-env-vars=GCP_PROJECT_ID=${_GCP_PROJECT_ID}',
+        '--set-env-vars=GCP_LOCATION=${_GCP_LOCATION}', # Location for Vertex AI
+        # Add other environment variables if needed:
+        # '--set-env-vars=ANOTHER_VAR=value1,YET_ANOTHER=value2',
+      ]
+    id: Deploy Service
+    waitFor: ['Push Image'] # Ensure image is pushed before deploying
+
+# Define the image tags for the final pushed image
+images:
+  - '${_REGION}-docker.pkg.dev/${_GCP_PROJECT_ID}/${_ARTIFACT_REPO}/${_SERVICE_NAME}:${COMMIT_SHA}'
+
+# Define substitutions (variables passed from Trigger or command line)
+# Default values can be provided, but Trigger variables usually override these.
+substitutions:
+  _SERVICE_NAME: 'chatbot-service' # Default Cloud Run service name
+  _REGION: 'us-central1'          # Default deployment region
+  _ARTIFACT_REPO: 'chatbot-repo'  # Default Artifact Registry repository name
+  _GCP_PROJECT_ID: 'your-gcp-project-id' # Placeholder - MUST be set by Trigger
+  _GCP_LOCATION: 'us-central1'     # Default Vertex AI location
+
+# Optional: Define build timeout
+timeout: '1200s' # 20 minutes
+
+# Optional: Specify the service account for Cloud Build to use
+# If not specified, it uses the default Cloud Build service account.
+# It's recommended to use the specific service account created in the guide.
+# serviceAccount: 'projects/${PROJECT_ID}/serviceAccounts/your-service-account-email'
+
+options:
+  logging: CLOUD_LOGGING_ONLY # Store logs only in Cloud Logging
+  # machineType: 'N1_HIGHCPU_8' # Optional: Specify a larger machine type if needed

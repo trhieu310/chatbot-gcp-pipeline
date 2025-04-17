@@ -1,0 +1,52 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environment
+env/
+venv/
+.venv/
+
+# Gradio/Streamlit cache
+.gradio/
+.streamlit/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Logs
+*.log
+
+# Local environment variables / secrets
+.env
+.env.*
+
+# Keys and credentials
+*.key
+*.pem
+*.p12
+*.json
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Docker artifacts
+*.tar
+docker-compose.override.yml
+
+# Pytest cache
+.pytest_cache/
+
+
+#other
+app/.env
+app/gcp-key.json
+.ipynb_checkpoints/
